@@ -1,0 +1,23 @@
+### dependencies
+- ostree
+- ostree-rs-ext
+- bubblewrap
+
+### preparation
+append the content of `registries.conf` to `~/.config/containers/registries.conf`
+
+### usage
+```
+# init ostree repo
+ruyi init
+# pull os image
+ruyi pull arch archlinux:riscv
+# checkout image into working copy
+ruyi checkout arch arch-1
+# enter working copy
+ruyi activate arch-1
+# commit changes
+ruyi commit arch-1 arch-new
+# show available images
+ruyi refs
+```
