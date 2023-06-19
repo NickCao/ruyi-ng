@@ -5,6 +5,7 @@ from subprocess import run
 from pathlib import Path
 from shutil import which
 import time
+import os, select, subprocess, sys, json
 
 OSTREE = which("ostree")
 OSTREE_EXT = which("ostree-ext-cli")
@@ -49,10 +50,50 @@ def checkout(name, workdir):
 @click.command()
 @click.argument("workdir")
 def activate(workdir):
-    run(
-        [
+    pipe_info = os.pipe()
+    userns_block = os.pipe()
+
+    pid = os.fork()
+
+    if pid != 0:
+        os.close(pipe_info[1])
+        os.close(userns_block[0])
+
+        select.select([pipe_info[0]], [], [])
+
+        data = json.load(os.fdopen(pipe_info[0]))
+        child_pid = str(data['child-pid'])
+
+        subprocess.call([
+                         "newuidmap", child_pid,
+                         "0", str(os.getuid()), "1",
+                         "1", "100000",         "65536",
+                       ])
+        subprocess.call([
+                         "newgidmap", child_pid,
+                         "0", str(os.getgid()), "1",
+                         "1", "100000",         "65536",
+                       ])
+
+        os.write(userns_block[1], b'1')
+
+        os.waitpid(pid, 0)
+    else:
+        os.close(pipe_info[0])
+        os.close(userns_block[1])
+
+        os.set_inheritable(pipe_info[1], True)
+        os.set_inheritable(userns_block[0], True)
+
+        # os.dup2(sys.stdin.fileno(), 0)
+        # os.dup2(sys.stdout.fileno(), 1)
+
+        print(os.execlp(
             BWRAP,
-            "--unshare-user-try",
+            BWRAP,
+            "--unshare-user",
+            "--userns-block-fd", "%i" % userns_block[0],
+            "--info-fd", "%i" % pipe_info[1],
             "--uid",
             "0",
             "--gid",
@@ -69,14 +110,18 @@ def activate(workdir):
             "/proc",
             "--dev",
             "/dev",
+            "--tmpfs",
+            "/tmp",
+            "--chmod",
+            "1777",
+            "/tmp",
             "--ro-bind-try", "/nix", "/nix",
             "--ro-bind-try", "/run/binfmt", "/run/binfmt",
             "--ro-bind-try", "/etc/resolv.conf", "/etc/resolv.conf",
             "--unsetenv",
             "PATH",
-            "/bin/sh",
-        ]
-    )
+            "/bin/sh"
+        ))
 
 
 @click.command()
