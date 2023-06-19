@@ -6,11 +6,10 @@ from pathlib import Path
 from shutil import which
 import time
 import os, select, subprocess, sys, json, csv
-from . import subordinate
+from . import bubblewrap
 
 OSTREE = which("ostree")
 OSTREE_EXT = which("ostree-ext-cli")
-BWRAP = which("bwrap")
 RUYI = Path.home() / "Downloads" / "ruyi-root"
 REPO = RUYI / "repo"
 WORK = RUYI / "work"
@@ -38,7 +37,18 @@ def refs():
 @click.argument("name")
 @click.argument("ref")
 def pull(name, ref):
-    run([OSTREE_EXT, "container", "unencapsulate", "--repo", REPO, "--write-ref", name, f"ostree-unverified-image:registry:{REMOTE}/library/{ref}"])
+    run(
+        [
+            OSTREE_EXT,
+            "container",
+            "unencapsulate",
+            "--repo",
+            REPO,
+            "--write-ref",
+            name,
+            f"ostree-unverified-image:registry:{REMOTE}/library/{ref}",
+        ]
+    )
 
 
 @click.command()
@@ -51,66 +61,37 @@ def checkout(name, workdir):
 @click.command()
 @click.argument("workdir")
 def activate(workdir):
-    pipe_info = os.pipe()
-    userns_block = os.pipe()
-
-    pid = os.fork()
-
-    if pid != 0:
-        os.close(pipe_info[1])
-        os.close(userns_block[0])
-
-        select.select([pipe_info[0]], [], [])
-
-        data = json.load(os.fdopen(pipe_info[0]))
-        child_pid = str(data['child-pid'])
-
-        subordinate.map(child_pid)
-
-        os.write(userns_block[1], b'1')
-
-        os.waitpid(pid, 0)
-    else:
-        os.close(pipe_info[0])
-        os.close(userns_block[1])
-
-        os.set_inheritable(pipe_info[1], True)
-        os.set_inheritable(userns_block[0], True)
-
-        os.execlp(
-            BWRAP,
-            BWRAP,
-            "--unshare-user",
-            "--userns-block-fd", "%i" % userns_block[0],
-            "--info-fd", "%i" % pipe_info[1],
-            "--uid",
-            "0",
-            "--gid",
-            "0",
-            "--cap-add",
-            "ALL",
-            "--bind",
-            WORK / workdir,
-            "/",
-            "--bind",
-            "/home",
-            "/home",
-            "--proc",
-            "/proc",
-            "--dev",
-            "/dev",
-            "--tmpfs",
-            "/tmp",
-            "--chmod",
-            "1777",
-            "/tmp",
-            "--ro-bind-try", "/nix", "/nix",
-            "--ro-bind-try", "/run/binfmt", "/run/binfmt",
-            "--ro-bind-try", "/etc/resolv.conf", "/etc/resolv.conf",
-            "--unsetenv",
-            "PATH",
-            "/bin/sh"
-        )
+    bubblewrap.bwrap(
+        "--cap-add",
+        "ALL",
+        "--bind",
+        WORK / workdir,
+        "/",
+        "--bind",
+        "/home",
+        "/home",
+        "--proc",
+        "/proc",
+        "--dev",
+        "/dev",
+        "--tmpfs",
+        "/tmp",
+        "--chmod",
+        "1777",
+        "/tmp",
+        "--ro-bind-try",
+        "/nix",
+        "/nix",
+        "--ro-bind-try",
+        "/run/binfmt",
+        "/run/binfmt",
+        "--ro-bind-try",
+        "/etc/resolv.conf",
+        "/etc/resolv.conf",
+        "--unsetenv",
+        "PATH",
+        "/bin/sh",
+    )
 
 
 @click.command()
@@ -126,6 +107,7 @@ cli.add_command(pull)
 cli.add_command(checkout)
 cli.add_command(activate)
 cli.add_command(commit)
+
 
 def entrypoint():
     cli()

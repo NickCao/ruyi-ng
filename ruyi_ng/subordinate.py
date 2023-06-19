@@ -18,7 +18,7 @@ def map(pid):
     subprocess.run(
         [
             "newuidmap",
-            pid,
+            str(pid),
             "0",
             str(os.getuid()),
             "1",
@@ -32,7 +32,7 @@ def map(pid):
     subprocess.run(
         [
             "newgidmap",
-            pid,
+            str(pid),
             "0",
             str(os.getgid()),
             "1",
