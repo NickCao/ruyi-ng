@@ -5,6 +5,8 @@
 - ostree-rs-ext
 - skopeo
 - bubblewrap
+- qemu-user and binfmt (x86)
+    - Arch Linux: Install `qemu-user-static` and `qemu-user-static-binfmt`.
 
 ### preparation
 append the content of `registries.conf` to `~/.config/containers/registries.conf`
