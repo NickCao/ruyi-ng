@@ -12,7 +12,7 @@ python = "^3.10"
 click = "^8.1.3"
 
 [tool.poetry.scripts]
-ruyi = "ruyi_ng.ruyi:run"
+ruyi = "ruyi_ng.ruyi:entrypoint"
 
 [build-system]
 requires = ["poetry-core"]

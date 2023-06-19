@@ -93,5 +93,5 @@ cli.add_command(checkout)
 cli.add_command(activate)
 cli.add_command(commit)
 
-def run():
+def entrypoint():
     cli()
