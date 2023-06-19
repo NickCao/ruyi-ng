@@ -1,6 +1,5 @@
-import csv
-import subprocess
-import os
+import csv, subprocess, os
+from shutil import which
 
 
 def load(file, login):
@@ -17,7 +16,7 @@ def map(pid):
 
     subprocess.run(
         [
-            "newuidmap",
+            which("newuidmap"),
             str(pid),
             "0",
             str(os.getuid()),
@@ -31,7 +30,7 @@ def map(pid):
 
     subprocess.run(
         [
-            "newgidmap",
+            which("newgidmap"),
             str(pid),
             "0",
             str(os.getgid()),
