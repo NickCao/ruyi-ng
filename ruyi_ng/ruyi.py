@@ -52,6 +52,7 @@ def activate(workdir):
     run(
         [
             BWRAP,
+            "--unshare-user-try",
             "--uid",
             "0",
             "--gid",
