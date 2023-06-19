@@ -61,35 +61,8 @@ def checkout(name, workdir):
 @click.command()
 @click.argument("workdir")
 def activate(workdir):
-    bubblewrap.bwrap(
-        "--cap-add",
-        "ALL",
-        "--bind",
+    bubblewrap.activate(
         WORK / workdir,
-        "/",
-        "--bind",
-        "/home",
-        "/home",
-        "--proc",
-        "/proc",
-        "--dev",
-        "/dev",
-        "--tmpfs",
-        "/tmp",
-        "--chmod",
-        "1777",
-        "/tmp",
-        "--ro-bind-try",
-        "/nix",
-        "/nix",
-        "--ro-bind-try",
-        "/run/binfmt",
-        "/run/binfmt",
-        "--ro-bind-try",
-        "/etc/resolv.conf",
-        "/etc/resolv.conf",
-        "--unsetenv",
-        "PATH",
         "/bin/sh",
     )
 

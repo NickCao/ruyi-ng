@@ -29,3 +29,29 @@ def bwrap(*args):
     os.write(user_fds[1], b"1")
 
     proc.wait()
+
+
+def activate(root, *cmd):
+    # fmt: off
+    bwrap(
+        # common bind mounts
+        "--bind", root   , "/"    ,
+        "--bind", "/home", "/home",
+        # nix specific bind mounts
+        "--ro-bind-try", "/nix/store" , "/nix/store" ,
+        "--ro-bind-try", "/run/binfmt", "/run/binfmt",
+        # niches
+        "--ro-bind-try", "/etc/resolv.conf", "/etc/resolv.conf",
+        # special file systems
+        "--proc" , "/proc",
+        "--dev"  , "/dev" ,
+        "--tmpfs", "/tmp" ,
+        "--chmod", "1777", "/tmp",
+        # privileges
+        "--cap-add", "ALL",
+        # environment
+        "--unsetenv", "PATH",
+        # command
+        *cmd
+    )
+    # fmt: on
