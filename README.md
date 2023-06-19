@@ -1,6 +1,9 @@
 ### dependencies
+- python3
+- python3-click
 - ostree
 - ostree-rs-ext
+- skopeo
 - bubblewrap
 
 ### preparation
