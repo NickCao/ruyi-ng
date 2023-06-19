@@ -5,7 +5,7 @@ from subprocess import run
 from pathlib import Path
 from shutil import which
 import time
-import os, select, subprocess, sys, json
+import os, select, subprocess, sys, json, csv
 
 OSTREE = which("ostree")
 OSTREE_EXT = which("ostree-ext-cli")
@@ -64,16 +64,27 @@ def activate(workdir):
         data = json.load(os.fdopen(pipe_info[0]))
         child_pid = str(data['child-pid'])
 
-        subprocess.call([
-                         "newuidmap", child_pid,
-                         "0", str(os.getuid()), "1",
-                         "1", "100000",         "65536",
-                       ])
-        subprocess.call([
-                         "newgidmap", child_pid,
-                         "0", str(os.getgid()), "1",
-                         "1", "100000",         "65536",
-                       ])
+        with open('/etc/subuid') as subuid:
+            reader = csv.reader(subuid, delimiter=':')
+            for row in reader:
+                if row[0] == os.getlogin():
+                    subprocess.call([
+                      "newuidmap", child_pid,
+                      "0", str(os.getuid()), "1",
+                      "1", row[1]          , row[2],
+                    ])
+                    break
+
+        with open('/etc/subgid') as subgid:
+            reader = csv.reader(subgid, delimiter=':')
+            for row in reader:
+                if row[0] == os.getlogin():
+                    subprocess.call([
+                      "newgidmap", child_pid,
+                      "0", str(os.getgid()), "1",
+                      "1", row[1]          , row[2],
+                    ])
+                    break
 
         os.write(userns_block[1], b'1')
 
@@ -85,10 +96,7 @@ def activate(workdir):
         os.set_inheritable(pipe_info[1], True)
         os.set_inheritable(userns_block[0], True)
 
-        # os.dup2(sys.stdin.fileno(), 0)
-        # os.dup2(sys.stdout.fileno(), 1)
-
-        print(os.execlp(
+        os.execlp(
             BWRAP,
             BWRAP,
             "--unshare-user",
@@ -121,7 +129,7 @@ def activate(workdir):
             "--unsetenv",
             "PATH",
             "/bin/sh"
-        ))
+        )
 
 
 @click.command()
