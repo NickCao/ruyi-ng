@@ -1,0 +1,19 @@
+[tool.poetry]
+name = "ruyi-ng"
+description = ""
+version = "0.1.0"
+authors = ["Nick Cao <nickcao@nichi.co>"]
+license = "MIT"
+readme = "README.md"
+packages = [{include = "ruyi_ng"}]
+
+[tool.poetry.dependencies]
+python = "^3.10"
+click = "^8.1.3"
+
+[tool.poetry.scripts]
+ruyi = "ruyi_ng.ruyi:run"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

@@ -92,5 +92,5 @@ cli.add_command(checkout)
 cli.add_command(activate)
 cli.add_command(commit)
 
-if __name__ == "__main__":
+def run():
     cli()
