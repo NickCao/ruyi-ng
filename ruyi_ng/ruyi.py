@@ -6,6 +6,7 @@ from pathlib import Path
 from shutil import which
 import time
 import os, select, subprocess, sys, json, csv
+from . import subordinate
 
 OSTREE = which("ostree")
 OSTREE_EXT = which("ostree-ext-cli")
@@ -64,27 +65,7 @@ def activate(workdir):
         data = json.load(os.fdopen(pipe_info[0]))
         child_pid = str(data['child-pid'])
 
-        with open('/etc/subuid') as subuid:
-            reader = csv.reader(subuid, delimiter=':')
-            for row in reader:
-                if row[0] == os.getlogin():
-                    subprocess.call([
-                      "newuidmap", child_pid,
-                      "0", str(os.getuid()), "1",
-                      "1", row[1]          , row[2],
-                    ])
-                    break
-
-        with open('/etc/subgid') as subgid:
-            reader = csv.reader(subgid, delimiter=':')
-            for row in reader:
-                if row[0] == os.getlogin():
-                    subprocess.call([
-                      "newgidmap", child_pid,
-                      "0", str(os.getgid()), "1",
-                      "1", row[1]          , row[2],
-                    ])
-                    break
+        subordinate.map(child_pid)
 
         os.write(userns_block[1], b'1')
 
