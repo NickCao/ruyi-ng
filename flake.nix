@@ -6,8 +6,8 @@
   outputs = { self, nixpkgs, flake-utils }:
     flake-utils.lib.eachDefaultSystem
       (system:
-        let pkgs = import nixpkgs { inherit system; }; in {
-          packages.default = with pkgs.python3Packages; buildPythonApplication {
+        let pkgs = import nixpkgs { inherit system; }; in with pkgs; {
+          packages.default = with python3Packages; buildPythonApplication {
             name = "ruyi-ng";
             src = self;
 
@@ -15,6 +15,13 @@
 
             nativeBuildInputs = [ poetry-core ];
             propagatedBuildInputs = [ click ];
+
+            makeWrapperArgs = [
+              "--prefix"
+              "PATH"
+              ":"
+              (lib.makeBinPath [ bubblewrap ostree ostree-rs-ext ])
+            ];
           };
         }
       );
