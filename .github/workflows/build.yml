@@ -8,3 +8,11 @@ jobs:
     - uses: DeterminateSystems/nix-installer-action@main
     - run: |
         nix build -vL .#appimage
+        cp --no-preserve all result ruyi-ng-x86_64.AppImage
+    - uses: marvinpinto/action-automatic-releases@latest
+      with:
+        repo_token: "${{ secrets.GITHUB_TOKEN }}"
+        automatic_release_tag: "latest"
+        prerelease: true
+        files: |
+          ruyi-ng-x86_64.AppImage
